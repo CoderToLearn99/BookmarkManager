@@ -1,5 +1,5 @@
 <template>
-  <div class="bookmark-list">
+  <div class="bookmark-list" :class="mode">
     <div 
       v-for="bookmark in bookmarks" 
       :key="bookmark.id" 
@@ -30,10 +30,11 @@ export default {
   padding: 20px;
   max-width: 600px; /* Set a max-width for better layout */
   margin: auto; /* Center the list within the container */
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%)
 }
 
 .bookmark-list.light {
-  background: linear-gradient(135deg, #ffffff 0%, #f4f4f4 100%);
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
 }
 
 /* Dark Mode */
@@ -45,7 +46,7 @@ export default {
 
 /* Individual bookmark card styling */
 .bookmark-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
   border: 1px solid #ddd;
   border-radius: 10px; /* Rounded corners for a softer look */
   margin: 10px 0;
@@ -53,6 +54,19 @@ export default {
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease; /* Animation for hover effects */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Dark Mode - Bookmark List */
+.bookmark-card.dark {
+  background: black; /* Dark background */
+  color: black;
+  border: 1px solid #444; /* Slightly lighter border for contrast */
+}
+
+/* Light Mode - Bookmark Details */
+.bookmark-card.light {
+  background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+  color: #333;
 }
 
 /* Hover effect for bookmark cards */
