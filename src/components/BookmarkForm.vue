@@ -10,7 +10,7 @@
           <input 
             v-model="bookmark.title" 
             type="text" 
-            id="title" 
+            id="title"
             placeholder="Enter bookmark title" 
             required 
           />
@@ -69,6 +69,7 @@
 <script>
 export default {
   props: {
+    id: parseInt,
     categories: Array,
     editingBookmark: Object, // Receive editing bookmark data
   },
@@ -85,8 +86,11 @@ export default {
     };
   },
   computed: {
-    isEditing() {
-      return !!this.editingBookmark; // Check if we are editing
+    currentBookmark() {
+      if (this.editingBookmark) {
+        return this.editingBookmark;
+      }
+      return this.getBookmarkById(this.id);
     },
   },
   watch: {
@@ -111,10 +115,14 @@ export default {
       }
     },
 
+    getBookmarkById(id) {
+      return this.$root.bookmarks.find(bookmark => bookmark.id === parseInt(id));
+    },
+
     
     finishBookmark() {
       this.$emit('add-bookmark', this.bookmark);
-      this.clearForm();
+      this.$router.replace('/');
     },
 
     
@@ -123,7 +131,7 @@ export default {
       this.step = 1; 
     },
     cancel() {
-      this.$emit('cancel');
+    this.$router.replace('/');
     },
     toggleMode() {
       this.mode = this.mode === "light" ? "dark" : "light";
