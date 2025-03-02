@@ -8,14 +8,7 @@
       @update:searchQuery="searchQuery = $event"
     />
     <!-- Bookmark Form Popup -->
-    <BookmarkForm 
-      :class="mode"
-      v-if="showForm" 
-      @add-bookmark="addBookmark" 
-      @cancel="cancelForm" 
-      :categories="categories"
-      :editingBookmark="editingBookmark"
-    />
+    <router-view :editingBookmark="editingBookmark" @add-bookmark="addBookmark" />
     <!-- Main Content Section (Bookmarks List & Bookmark Details) -->
     <div class="main-content" :class="mode">
       <!-- Filter buttons (above bookmark list) -->
@@ -42,7 +35,7 @@
         <h3>Bookmark Details</h3>
         <p><strong>URL:</strong> {{ selectedBookmark.url }}</p>
         <p><strong>Title:</strong> {{ selectedBookmark.title }}</p>
-        <p><strong>Tag:</strong> {{ selectedBookmark.tag }}</p>
+        <p><strong>Tag:</strong> {{ selectedBookmark.tags }}</p>
         <p><strong>Category:</strong> {{ selectedBookmark.category }}</p>
         <button @click="editBookmark(selectedBookmark)">Edit</button>
         <button @click="deleteBookmark(selectedBookmark.id)">Delete</button>
@@ -54,9 +47,11 @@
 </template>
 
 <script>
+//import { createRouter, createWebHistory } from 'vue-router';
+
 //import { ref } from 'vue';
 import AppHeader from './components/AppHeader.vue';
-import BookmarkForm from './components/BookmarkForm.vue';
+//import BookmarkForm from './components/BookmarkForm.vue';
 import BookmarkList from './components/BookmarkList.vue';
 import AppFooter from './components/AppFooter.vue';
 
@@ -64,7 +59,6 @@ export default {
   name: 'App',
   components: {
     AppHeader,
-    BookmarkForm,
     BookmarkList,
     AppFooter,
   },
@@ -95,23 +89,13 @@ export default {
       return categoryFiltered.filter(bookmark => 
         (bookmark.title?.toLowerCase().includes(lowerQuery) || '') ||  // Safe access using `?.`
         (bookmark.url?.toLowerCase().includes(lowerQuery) || '') ||
-        (bookmark.tag?.toLowerCase().includes(lowerQuery) || '')
+        (bookmark.tags?.toLowerCase().includes(lowerQuery) || '')
       );
     }
 
     return categoryFiltered;
     }
   },
-  toggleMode() {
-      this.mode = this.mode === 'light' ? 'dark' : 'light';
-      document.body.classList.toggle('dark-mode', this.mode === 'dark'); 
-      document.body.classList.toggle('light-mode', this.mode === 'light');
-      localStorage.setItem('mode', this.mode); // Store mode preference
-  },
-  mounted() {
-  this.mode = localStorage.getItem('mode') || 'light'; // Retrieve stored mode
-  document.body.classList.add(this.mode === 'dark' ? 'dark-mode' : 'light-mode');
-},
   methods: {
     toggleMode() {
       this.mode = this.mode === 'light' ? 'dark' : 'light';
@@ -119,13 +103,10 @@ export default {
       document.body.classList.toggle('light-mode', this.mode === 'light');
       localStorage.setItem('mode', this.mode); // Store mode preference
     },
-    mounted() {
-      this.mode = localStorage.getItem('mode') || 'light'; // Retrieve stored mode
-      document.body.classList.add(this.mode === 'dark' ? 'dark-mode' : 'light-mode');
-    },
     showCreateBookmarkForm() {
-      this.showForm = true;
+      this.$router.push('/bookmark-form')
     },
+    
     addBookmark(newBookmark) {
       if (this.editingBookmark) {
         // If editing, find the existing bookmark and update it
@@ -142,9 +123,11 @@ export default {
       });
       }
       this.showForm = false;
+      this.$router.push('/');
     },
     cancelForm() {
       this.showForm = false;
+      this.$router.replace('/');
     },
     showBookmarkDetails(bookmark) {
       this.selectedBookmark = bookmark;
@@ -153,7 +136,7 @@ export default {
     editBookmark(bookmark) {
       // You can implement editing logic here (e.g., show the form with existing data)
       this.editingBookmark = { ...bookmark }; // Clone object to avoid modifying directly
-      this.showForm = true;
+      this.$router.push({ name: 'edit-bookmark', params: { id: bookmark.id } });
       //alert(`Edit bookmark with ID: ${bookmark.id}`);
     },
     deleteBookmark(bookmarkId) {
@@ -163,7 +146,11 @@ export default {
     filterBookmarks(category) {
       this.selectedCategory = category;
     }
-  }
+  },
+  mounted() {
+      this.mode = localStorage.getItem('mode') || 'light'; // Retrieve stored mode
+      document.body.classList.add(this.mode === 'dark' ? 'dark-mode' : 'light-mode');
+  },
 };
 </script>
 
@@ -175,18 +162,7 @@ export default {
   min-height: 100vh; /* Full viewport height */
 }
 
-/* Light Mode (Default) */
-body.light-mode {
-  background-color: #ffffff;
-  color: #333;
-  transition: background 0.3s ease, color 0.3s ease;
-}
 
-/* Dark Mode */
-body.dark-mode {
-  background-color: #121212;
-  color: #ffffff;
-}
 
 
 
@@ -289,11 +265,21 @@ body.dark-mode {
   padding: 20px;
   margin-left: 20px; /* Space between the list and details */
   border: 1px solid #ddd; /* Border for separation */
-  background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%); /* Gradient background */
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* Gradient background */
   border-radius: 10px; /* Rounded corners */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Deeper shadow for depth */
   transition: transform 0.3s ease, box-shadow 0.3s ease; 
 }
+.bookmark-card.light {
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+}
+
+/* Dark Mode */
+.bookmark-card.dark {
+  background-color: #333333;
+  color: #fff;
+}
+
 
 .bookmark-details:hover {
   transform: translateY(-2px); /* Slight lift on hover */
@@ -312,7 +298,7 @@ body.dark-mode {
 
 /* Individual bookmark card styling */
 .bookmark-card {
-  background: #ffffff; /* White background for individual cards */
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* White background for individual cards */
   border: 1px solid #ddd; /* Border for cards */
   border-radius: 10px; /* Rounded corners for cards */
   margin: 10px 0; /* Margin between cards */
@@ -320,6 +306,15 @@ body.dark-mode {
   cursor: pointer; /* Pointer cursor for cards */
   transition: transform 0.3s ease, box-shadow 0.3s ease; /* Animation for hover effects */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+.bookmark-card.light {
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);;
+}
+
+/* Dark Mode */
+.bookmark-card.dark {
+  background-color: #333333;
+  color: #fff;
 }
 
 /* Hover effect for bookmark cards */
