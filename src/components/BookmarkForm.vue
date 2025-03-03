@@ -1,10 +1,9 @@
 <template>
   <div :class="mode">
-    <div class="bookmark-form-container">
-      <div class="bookmark-form">
+    <div class="bookmark-form-container" :class="mode">
+      <div class="bookmark-form" :class="mode">
         <h2 class="form-heading">Add Bookmark</h2>
-        
-        
+
         <div v-if="step === 1" class="form-group">
           <label for="title"> Title</label>
           <input 
@@ -18,7 +17,6 @@
           <button @click="cancel">Cancel</button>
         </div>
 
-        
         <div v-if="step === 2" class="form-group">
           <label for="url"> URL</label>
           <input 
@@ -32,7 +30,6 @@
           <button @click="cancel">Cancel</button>
         </div>
 
-        
         <div v-if="step === 3" class="form-group">
           <label for="tags">Tags (optional)</label>
           <input 
@@ -45,7 +42,6 @@
           <button @click="cancel">Cancel</button>
         </div>
 
-        
         <div v-if="step === 4" class="form-group">
           <label for="category">Category</label>
           <select v-model="bookmark.category" id="category" required>
@@ -61,20 +57,19 @@
         </div>
       </div>
     </div>
-
-    
   </div>
 </template>
 
 <script>
 export default {
   props: {
+    mode: String,
     id: parseInt,
     categories: Array,
     editingBookmark: Object, // Receive editing bookmark data
   },
   data() {
-     return {
+    return {
       step: 1,
       bookmark: {
         title: '',
@@ -82,7 +77,6 @@ export default {
         tags: '',
         category: '',
       },
-      mode: localStorage.getItem("mode") || "light",
     };
   },
   computed: {
@@ -119,23 +113,17 @@ export default {
       return this.$root.bookmarks.find(bookmark => bookmark.id === parseInt(id));
     },
 
-    
     finishBookmark() {
       this.$emit('add-bookmark', this.bookmark);
       this.$router.replace('/');
     },
 
-    
     clearForm() {
       this.bookmark = { title: '', url: '', tags: '', category: '' };
       this.step = 1; 
     },
     cancel() {
-    this.$router.replace('/');
-    },
-    toggleMode() {
-      this.mode = this.mode === "light" ? "dark" : "light";
-      localStorage.setItem("mode", this.mode); 
+      this.$router.replace('/');
     },
   }
 };
@@ -148,8 +136,8 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
   padding: 0 20px;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Main form styling */
@@ -176,9 +164,9 @@ export default {
   margin-bottom: 25px;
   font-size: 2rem;
   font-weight: 700;
-  color: #333;
   text-transform: uppercase;
   letter-spacing: 1px;
+  transition: color 0.3s ease;
 }
 
 /* Styling the form inputs */
@@ -192,8 +180,8 @@ export default {
 label {
   font-size: 1rem;
   font-weight: 600;
-  color: #555;
   margin-bottom: 8px;
+  transition: color 0.3s ease;
 }
 
 /* Input and Select Styles */
@@ -209,9 +197,6 @@ select {
   background-color: #f9f9f9;
   color: #333;
   transition: all 0.3s ease;
-  background-image: linear-gradient(white, white), linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
-  background-clip: padding-box, border-box;
-  border-width: 1px;
 }
 
 /* Focus and hover effects */
@@ -220,11 +205,6 @@ select:focus {
   border-color: #0070f3;
   background-color: #fff;
   box-shadow: 0 0 10px rgba(0, 112, 243, 0.3);
-}
-
-input::placeholder {
-  color: #bbb;
-  font-style: italic;
 }
 
 /* Button styling */
@@ -297,7 +277,6 @@ button {
   }
 }
 
-
 /* Light Mode */
 .bookmark-form-container.light {
   background: linear-gradient(135deg, #ffffff 0%, #f4f4f4 100%);
@@ -329,14 +308,22 @@ button {
 }
 
 .bookmark-form-container.dark .bookmark-form {
-  background: #333;
+  background: #444;
   color: #fff;
 }
 
 .bookmark-form-container.dark .form-group input,
 .bookmark-form-container.dark .form-group select {
-  background-color: #444;
+  background-color: #555;
   color: #fff;
+  border: 1px solid #666;
+}
+
+.bookmark-form-container.dark .form-group input:focus,
+.bookmark-form-container.dark .form-group select:focus {
+  border-color: #0070f3;
+  background-color: #666;
+  box-shadow: 0 0 10px rgba(0, 112, 243, 0.3);
 }
 
 .bookmark-form-container.dark button {
