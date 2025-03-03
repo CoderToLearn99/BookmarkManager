@@ -7,15 +7,14 @@
       @showCreateBookmark="showCreateBookmarkForm"
       @update:searchQuery="searchQuery = $event"
     />
-    <!-- Bookmark Form Popup -->
-    <router-view :editingBookmark="editingBookmark" @add-bookmark="addBookmark" />
-    <!-- Main Content Section (Bookmarks List & Bookmark Details) -->
-    <div class="main-content" :class="mode">
-      <!-- Filter buttons (above bookmark list) -->
+
+    <router-view :mode="mode" :editingBookmark="editingBookmark" @add-bookmark="addBookmark" />
+
+    <div class="main-content" :mode="mode">
       <div class="category-filters">
-        <button 
-          v-for="category in categories" 
-          :key="category" 
+        <button
+          v-for="category in categories"
+          :key="category"
           @click="filterBookmarks(category)"
           :class="{ active: selectedCategory === category }"
         >
@@ -25,13 +24,22 @@
           All
         </button>
       </div>
-      <!-- Bookmark List -->
-      <BookmarkList 
-        :bookmarks="filteredBookmarks" 
-        @select-bookmark="showBookmarkDetails"
-      />
-      <!-- Bookmark Details Section (on the right side) -->
-      <div v-if="selectedBookmark" class="bookmark-details">
+
+      <!-- Conditional Rendering for Bookmarks -->
+      <div class="bookmark-list">
+        <template v-if="filteredBookmarks.length === 0">
+          <p>No bookmarks available. Create your first bookmark!</p>
+        </template>
+        <template v-else>
+          <BookmarkList
+            :bookmarks="filteredBookmarks"
+            :mode="mode"
+            @select-bookmark="showBookmarkDetails"
+          />
+        </template>
+      </div>
+
+      <div v-if="selectedBookmark" class="bookmark-details" :class="mode">
         <h3>Bookmark Details</h3>
         <p><strong>URL:</strong> {{ selectedBookmark.url }}</p>
         <p><strong>Title:</strong> {{ selectedBookmark.title }}</p>
@@ -42,16 +50,13 @@
         <button @click="selectedBookmark = null">Close</button>
       </div>
     </div>
-  <AppFooter :mode="mode"/>
+
+    <AppFooter :mode="mode" />
   </div>
 </template>
 
 <script>
-//import { createRouter, createWebHistory } from 'vue-router';
-
-//import { ref } from 'vue';
 import AppHeader from './components/AppHeader.vue';
-//import BookmarkForm from './components/BookmarkForm.vue';
 import BookmarkList from './components/BookmarkList.vue';
 import AppFooter from './components/AppFooter.vue';
 
@@ -64,63 +69,56 @@ export default {
   },
   data() {
     return {
-      mode: 'light', // Default mode
+      mode: localStorage.getItem('mode') || 'light',
       searchQuery: '',
-      searchTerm: '',
-      showForm: false,
       categories: ['Work', 'Personal', 'Travel', 'Finance', 'Other'],
       bookmarks: [],
       bookmarkIdCounter: 1,
       selectedBookmark: null,
-      selectedCategory: 'All', // Default to showing all bookmarks
+      selectedCategory: 'All',
       editingBookmark: null,
     };
   },
   computed: {
     filteredBookmarks() {
-      // Start with category filtering
-    let categoryFiltered = this.selectedCategory === 'All'
-      ? this.bookmarks
-      : this.bookmarks.filter(bookmark => bookmark.category === this.selectedCategory);
+      let categoryFiltered = this.selectedCategory === 'All'
+        ? this.bookmarks
+        : this.bookmarks.filter(bookmark => bookmark.category === this.selectedCategory);
 
-    // Then apply search filtering separately
-    if (this.searchQuery.trim()) {
-      const lowerQuery = this.searchQuery.toLowerCase();
-      return categoryFiltered.filter(bookmark => 
-        (bookmark.title?.toLowerCase().includes(lowerQuery) || '') ||  // Safe access using `?.`
-        (bookmark.url?.toLowerCase().includes(lowerQuery) || '') ||
-        (bookmark.tags?.toLowerCase().includes(lowerQuery) || '')
-      );
-    }
+      if (this.searchQuery.trim()) {
+        const lowerQuery = this.searchQuery.toLowerCase();
+        return categoryFiltered.filter(bookmark =>
+          (bookmark.title?.toLowerCase().includes(lowerQuery) || '') ||
+          (bookmark.url?.toLowerCase().includes(lowerQuery) || '') ||
+          (bookmark.tags?.toLowerCase().includes(lowerQuery) || '')
+        );
+      }
 
-    return categoryFiltered;
+      return categoryFiltered;
     }
   },
   methods: {
     toggleMode() {
       this.mode = this.mode === 'light' ? 'dark' : 'light';
-      document.body.classList.toggle('dark-mode', this.mode === 'dark'); 
+      localStorage.setItem('mode', this.mode);
+      document.body.classList.toggle('dark-mode', this.mode === 'dark');
       document.body.classList.toggle('light-mode', this.mode === 'light');
-      localStorage.setItem('mode', this.mode); // Store mode preference
     },
     showCreateBookmarkForm() {
-      this.$router.push('/bookmark-form')
+      this.$router.push('/bookmark-form');
     },
-    
     addBookmark(newBookmark) {
       if (this.editingBookmark) {
-        // If editing, find the existing bookmark and update it
         const index = this.bookmarks.findIndex(b => b.id === this.editingBookmark.id);
         if (index !== -1) {
           this.bookmarks[index] = { ...newBookmark, id: this.editingBookmark.id };
         }
-        this.editingBookmark = null; // Reset editing state
+        this.editingBookmark = null;
       } else {
-        // Otherwise, add as a new bookmark
         this.bookmarks.push({
           id: this.bookmarkIdCounter++,
           ...newBookmark
-      });
+        });
       }
       this.showForm = false;
       this.$router.push('/');
@@ -131,230 +129,179 @@ export default {
     },
     showBookmarkDetails(bookmark) {
       this.selectedBookmark = bookmark;
-      this.editingBookmark = null; 
+      this.editingBookmark = null;
     },
     editBookmark(bookmark) {
-      // You can implement editing logic here (e.g., show the form with existing data)
-      this.editingBookmark = { ...bookmark }; // Clone object to avoid modifying directly
+      this.editingBookmark = { ...bookmark };
       this.$router.push({ name: 'edit-bookmark', params: { id: bookmark.id } });
-      //alert(`Edit bookmark with ID: ${bookmark.id}`);
     },
     deleteBookmark(bookmarkId) {
       this.bookmarks = this.bookmarks.filter(bookmark => bookmark.id !== bookmarkId);
-      this.selectedBookmark = null;  // Close the details view after deletion
+      this.selectedBookmark = null;
     },
     filterBookmarks(category) {
       this.selectedCategory = category;
     }
   },
   mounted() {
-      this.mode = localStorage.getItem('mode') || 'light'; // Retrieve stored mode
-      document.body.classList.add(this.mode === 'dark' ? 'dark-mode' : 'light-mode');
+    document.body.classList.add(this.mode === 'dark' ? 'dark-mode' : 'light-mode');
   },
 };
 </script>
 
 <style scoped>
+/* Base Styles */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 
+/* App Container */
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* Full viewport height */
+  min-height: 100vh;
 }
 
-
-
-
-
-/* Main content container */
+/* Main Content */
 .main-content {
-  flex: 1;
   display: flex;
-  flex-direction: column; /* Changed to column for vertical stacking */
+  flex-direction: column; /* Stack content vertically */
   padding: 20px;
-  gap: 20px;
+  gap: 20px; /* Space between elements */
+  transition: background-color 0.3s ease;
 }
 
-.AppFooter {
-  margin-top: auto; /* Pushes footer to the bottom */
-  background: #333;
-  color: white;
-  text-align: center;
-  padding: 15px;
+/* Header and Footer */
+header,
+footer {
+  padding: 1rem 2rem; /* Increased padding for header and footer */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
+footer {
+  margin-top: auto; /* Ensure footer is at the bottom */
+}
 
-/* Category filters styling */
+/* Category Filters */
 .category-filters {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
-  flex-wrap: wrap;
-  justify-content: center; /* Center the filters */
+  flex-wrap: wrap; /* Allow wrapping of buttons */
 }
 
-/* Filter button styles */
+/* Filter Button Styles */
 .category-filters button {
-  padding: 10px 20px;
-  background-color: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* Gradient background for buttons */
-  color: black !important;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
-}
-
-/* Active button style */
-.category-filters button.active {
-  background: linear-gradient(135deg, #0056c1 0%, #004a98 100%); /* Darker gradient for active buttons */
-  box-shadow: 0 4px 15px rgba(0, 86, 193, 0.3); /* Stronger shadow for active state */
-  transform: scale(1.05); /* Slightly enlarge active button */
-  color: white;
-}
-
-/* Filter button styles */
-.bookmark-details button {
-  padding: 10px 20px;
-  background-color: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* Gradient background for buttons */
-  color: black !important;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
-}
-
-/* Active button style */
-.bookmark-details.active {
-  background: linear-gradient(135deg, #0056c1 0%, #004a98 100%); /* Darker gradient for active buttons */
-  box-shadow: 0 4px 15px rgba(0, 86, 193, 0.3); /* Stronger shadow for active state */
-  transform: scale(1.05); /* Slightly enlarge active button */
-  color: white;
-}
-
-/* Inactive button style */
-.bookmark-details button.inactive {
-  background: #f4f4f4; /* Light gray for inactive buttons */
-  color: #000000 !important; /* Darker text for contrast */
-  border: 1px solid #ccc; /* Border for inactive buttons */
-}
-
-/* Hover effect */
-.bookmark-details button:hover {
-  background: linear-gradient(135deg, #66dbd0 0%, #89c0de 100%); /* Lighten gradient on hover */
-  color: white; /* Keep text color white on hover */
-  transform: scale(1.03); /* Slightly enlarge on hover */
-}
-
-/* Inactive button style */
-.category-filters button.inactive {
-  background: #f4f4f4; /* Light gray for inactive buttons */
-  color: black !important; /* Darker text for contrast */
-  border: 1px solid #ccc; /* Border for inactive buttons */
-}
-
-/* Hover effect */
-.category-filters button:hover {
-  background: linear-gradient(135deg, #66dbd0 0%, #89c0de 100%); /* Lighten gradient on hover */
-  color: white; /* Keep text color white on hover */
-  transform: scale(1.03); /* Slightly enlarge on hover */
-}
-
-/* Bookmark details section styling */
-.bookmark-details {
-  width: 30%; /* Full width for the details section */
-  padding: 20px;
-  margin-left: 20px; /* Space between the list and details */
-  border: 1px solid #ddd; /* Border for separation */
-  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* Gradient background */
-  border-radius: 10px; /* Rounded corners */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Deeper shadow for depth */
-  transition: transform 0.3s ease, box-shadow 0.3s ease; 
-}
-.bookmark-card.light {
+  padding: 10px 15px;
   background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+  color: #333; /* Default text color */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Dark Mode */
-.bookmark-card.dark {
-  background-color: #333333;
-  color: #fff;
+/* Active Filter Button */
+.category-filters button.active {
+  background: linear-gradient(135deg, #0056c1 0%, #004a98 100%);
+  color: white;
 }
 
-
-.bookmark-details:hover {
-  transform: translateY(-2px); /* Slight lift on hover */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-}
-
-/* Bookmark list styling */
+/* Bookmark List */
 .bookmark-list {
-  width: 70%; /* Full width for the list */
-  overflow-y: auto; /* Enable vertical scrolling */
-  padding: 20px; /* Padding for better spacing */
-  border: 1px solid #ddd; /* Border for separation */
-  border-radius: 10px; /* Rounded corners */
-  background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%); /* Gradient background */
+  display: grid; /* Use grid layout for bookmarks */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Responsive grid */
+  gap: 15px; /* Space between cards */
 }
 
-/* Individual bookmark card styling */
+/* Individual Bookmark Card */
 .bookmark-card {
-  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%); /* White background for individual cards */
+  background: #ffffff; /* White background */
   border: 1px solid #ddd; /* Border for cards */
-  border-radius: 10px; /* Rounded corners for cards */
-  margin: 10px 0; /* Margin between cards */
+  border-radius: 10px; /* Rounded corners */
   padding: 15px; /* Padding inside cards */
   cursor: pointer; /* Pointer cursor for cards */
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Animation for hover effects */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-}
-.bookmark-card.light {
-  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Dark Mode */
-.bookmark-card.dark {
-  background-color: #333333;
-  color: #fff;
-}
-
-/* Hover effect for bookmark cards */
+/* Hover Effect for Bookmark Cards */
 .bookmark-card:hover {
   transform: translateY(-3px); /* Lift effect on hover */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
 }
 
-.main-content.light {
-  background: linear-gradient(135deg, #ffffff 0%, #f4f4f4 100%);
+/* Bookmark Details Section */
+.bookmark-details {
+  width: 100%; /* Full width for details */
+  padding: 20px;
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  background: linear-gradient(135deg, #f4f4f4 0%, #ffffff 100%); /* Light background */
 }
 
-/* Dark Mode */
-.main-content.dark {
-  background-color: #333333;
-  color: #fff;
+/* Bookmark Details Heading */
+.bookmark-details h3 {
+  margin: 0 0 15px; /* Space below heading */
 }
 
-/* Responsive Design for smaller screens */
+/* Button Styles within Bookmark Details */
+.bookmark-details button {
+  padding: 10px 15px;
+  margin-right: 10px; /* Space between buttons */
+  background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+/* Button Hover Effects */
+.bookmark-details button:hover {
+  background: linear-gradient(135deg, #66dbd0 0%, #89c0de 100%);
+}
+
+/* Light Mode Styles */
+.light {
+  background-color: #f9f9f9; /* Light mode background */
+  color: #333; /* Text color in light mode */
+}
+
+/* Dark Mode Styles */
+.dark {
+  background-color: #333; /* Dark mode background */
+  color: #f5f5f5; /* Text color in dark mode */
+}
+
+/* Dark Mode Specific Styles */
+.dark .bookmark-details {
+  background: #444; /* Dark background for details */
+}
+
+.dark .bookmark-card {
+  background: #555; /* Dark card background */
+  border: 1px solid #666; /* Dark border */
+}
+
+/* Responsive Design Adjustments */
 @media (max-width: 768px) {
   .main-content {
-    flex-direction: column; /* Stack elements vertically on small screens */
+    padding: 10px; /* Less padding on smaller screens */
   }
-
-  .bookmark-details {
-    border-left: none; /* Remove left border for smaller screens */
-    border-top: 1px solid #ddd; /* Add top border for distinction */
+  
+  .bookmark-list {
+    grid-template-columns: 1fr; /* Stack cards on top of each other */
   }
-
-  .bookmark-list,
-  .bookmark-details {
-    width: 100%; /* Make both sections full width on small screens */
-    margin-left: 0; /* Remove left margin on small screens */
-    margin-top: 20px; /* Add margin between sections */
+  
+  .category-filters {
+    flex-direction: column; /* Stack filters vertically */
   }
 
   .category-filters button {
-    padding: 8px 16px; /* Adjust padding for smaller screens */
-    font-size: 0.9rem; /* Slightly smaller font size */
+    width: 100%; /* Full width for buttons on mobile */
   }
 }
-
 </style>
