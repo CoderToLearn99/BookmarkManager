@@ -29,7 +29,7 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  max-width: 600px; /* Set a max-width for better layout */
+  max-width: 1500px; /* Set a max-width for better layout */
   margin: auto; /* Center the list within the container */
   background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%)
 }
@@ -44,7 +44,6 @@ export default {
   color: #fff;
 }
 
-
 /* Individual bookmark card styling */
 .bookmark-card {
   background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
@@ -55,6 +54,14 @@ export default {
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease; /* Animation for hover effects */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* URL Text Styling */
+.bookmark-card p {
+  word-wrap: break-word; /* Allow long words to break */
+  overflow-wrap: break-word; /* Alternative for older browsers */
+  white-space: normal; /* Enable text wrapping */
+  margin: 0; /* Remove default paragraph margin */
 }
 
 /* Dark Mode - Bookmark List */
