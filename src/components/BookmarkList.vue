@@ -1,6 +1,7 @@
 <template>
   <div class="bookmark-list" :class="mode">
     <div 
+      :class="mode"
       v-for="bookmark in bookmarks" 
       :key="bookmark.id" 
       class="bookmark-card"
